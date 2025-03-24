@@ -1,0 +1,6 @@
+max_number_of_instances=4
+number_of_tanks=6
+number_of_healers=6
+number_of_dps=20
+min_finish_time_seconds=1
+max_finish_time_seconds=1.3
