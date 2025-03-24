@@ -77,7 +77,7 @@ class DungeonInstance {
         }
 
         string getInstanceStats() {
-            return "Dungeon " + to_string(instanceId) + " served " + to_string(partiesServed) + "with a total service time of " + to_string(totalTimeServiced) + " ms.";
+            return "Dungeon " + to_string(instanceId) + " served " + to_string(partiesServed) + " parties with a total service time of " + to_string(totalTimeServiced) + " ms.";
         }
 
     private:
