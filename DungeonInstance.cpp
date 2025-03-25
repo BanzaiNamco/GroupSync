@@ -1,5 +1,4 @@
-#include "DungeonInstance.h"
-#include "DungeonManager.h" // Include the full definition
+#include "DungeonManager.h"
 
 #include <stdlib.h>
 #include <stdio.h>

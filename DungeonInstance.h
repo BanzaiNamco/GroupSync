@@ -6,9 +6,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <string>
-#include "Party.h" // Include the Party header
+#include "Party.h" 
 
-// Forward declare DungeonManager to avoid circular dependency
 class DungeonManager;
 
 class DungeonInstance {

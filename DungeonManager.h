@@ -25,4 +25,4 @@ private:
     std::vector<std::unique_ptr<DungeonInstance>> dungeonInstances;
 };
 
-#endif // DUNGEONMANAGER_H
+#endif
