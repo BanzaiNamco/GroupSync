@@ -56,10 +56,7 @@ DungeonManager::~DungeonManager() {
     for (auto& instance : dungeonInstances) {
         instance->stopInstance();
     }
-    {
-        lock_guard<mutex> lock(loggerMutex);
-        loggerCv.notify_all();
-    }
+    loggerCv.notify_all();
     loggerThread.join();
 }
 
@@ -85,10 +82,7 @@ void DungeonManager::waitForCompletion() {
     }
 
     stop = true;
-    {
-        lock_guard<mutex> lock(loggerMutex);
-        loggerCv.notify_all();
-    }
+    loggerCv.notify_all();
     printAllDungeonStats();
 }
 
