@@ -67,12 +67,18 @@ void getConfig(uint32_t &n, uint32_t &t, uint32_t &h, uint32_t &d, uint32_t &t1,
     cout << "Configurations:" << endl;
     cout << "----------------" << endl;
     for (const auto& [key, valuePtr] : configMap) {
-        cout << key << " = " << *valuePtr << endl;
+        if(key.find("seconds") != string::npos) 
+            cout << key << " = " << *valuePtr / 1000.00 << "s" << endl;
+        else
+            cout << key << " = " << *valuePtr << endl;
     }
     cout << "----------------" << endl;
 
     if (t1 > t2) {
         throw invalid_argument("Minimum finish time is greater than maximum finish time");
+    }
+    if (t1 == 0 || t2 == 0) {
+        throw invalid_argument("Finish times cannot be zero");
     }
 }
 
@@ -87,6 +93,7 @@ int main() {
     DungeonManager manager(n, t1, t2);
 
     uint32_t partiesToServe = min({t, h, d / 3});
+    cout << "Parties to serve: " << partiesToServe << endl;
 
     uint32_t dpsOverflow = d - (partiesToServe * 3);
     uint32_t healerOverflow = h - partiesToServe;
@@ -95,7 +102,7 @@ int main() {
     for (uint32_t i = 1; i <= partiesToServe; ++i) {
         manager.enqueueParty(Party(i));
     }
-
+    manager.run();
     manager.waitForCompletion();
     cout << "\nPlayers remaining in queue without a party: " << endl;
     cout << "Tanks: " << tankOverflow << endl;

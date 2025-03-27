@@ -1,34 +1,38 @@
 #include "DungeonManager.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <iostream>
 #include <random>
 #include <chrono>
+#include <thread>
 
 using namespace std;
 
-DungeonInstance::DungeonInstance(uint32_t time1, uint32_t time2, uint32_t instanceID, 
-                                 std::queue<Party>& sharedQueue, std::mutex& sharedMutex, 
-                                 std::condition_variable& sharedCv, DungeonManager& managerRef)
+DungeonInstance::DungeonInstance(uint32_t time1, uint32_t time2, uint32_t instanceID, mutex& logMutex, 
+                                 condition_variable& logCv)
     : t1(time1), t2(time2), instanceId(instanceID), 
-      partyQueue(sharedQueue), queueMutex(sharedMutex), queueCv(sharedCv), 
-      stop(false), manager(managerRef) {}
+      loggerMutex(logMutex), loggerCv(logCv), currentParty(nullptr) {}
 
 void DungeonInstance::run() {
-    cout << "Dungeon " << instanceId << " is now Ready and EMPTY." << endl;
     worker = thread([this]() {
-        while (!stop) {
-            unique_lock<mutex> lock(queueMutex);
-            queueCv.wait(lock, [this]() { return !partyQueue.empty() || stop; });
+        while (true) {
+            unique_ptr<Party> partyToProcess;
 
-            if (stop && partyQueue.empty()) return;
+            {
+                unique_lock<mutex> lock(mtx);
+                cv.wait(lock, [this]() { return currentParty != nullptr || stop; });
 
-            Party party = partyQueue.front();
-            partyQueue.pop();
-            lock.unlock();
+                if (stop && currentParty == nullptr) {
+                    break;
+                }
 
-            processParty(party);
+                partyToProcess = move(currentParty);
+                currentParty = nullptr;
+            }
+
+            if (partyToProcess) {
+                processParty(*partyToProcess);
+                busy = false;
+            }
         }
     });
 }
@@ -37,31 +41,41 @@ void DungeonInstance::processParty(const Party& party) {
     mt19937 generator(random_device{}());
     uniform_int_distribution<uint32_t> distribution(t1, t2);
     uint32_t completionTime = distribution(generator);
-    
     {
-        unique_lock<mutex> lock(queueMutex);
+        lock_guard<mutex> lock(loggerMutex);
         cout << "Dungeon " << instanceId << " is now ACTIVE serving Party " << party.partyId << " for " << completionTime / 1000.00 << "s." << endl;
-        busy = true;
-        manager.printAllDungeonCurrentStatus();
+        loggerCv.notify_all();
     }
-    
+
     this_thread::sleep_for(chrono::milliseconds(completionTime));
-    
+
     {
-        unique_lock<mutex> lock(queueMutex);
+        lock_guard<mutex> lock(loggerMutex);
         cout << "Dungeon " << instanceId << " is now EMPTY after completing Party " << party.partyId << "." << endl;
-        busy = false;
-        manager.printAllDungeonCurrentStatus();
+        loggerCv.notify_all();
     }
-    
     partiesServed++;
     totalTimeServiced += completionTime;
 }
 
+void DungeonInstance::assignParty(unique_ptr<Party> party) {
+    {
+        lock_guard<mutex> lock(mtx);
+        currentParty = move(party);
+        busy = true;
+    }
+    cv.notify_one();
+}
+
 void DungeonInstance::stopInstance() {
-    stop = true;
-    queueCv.notify_all();
-    if (worker.joinable()) worker.join();
+    {
+        lock_guard<mutex> lock(mtx);
+        stop = true;
+    }
+    cv.notify_all();
+    if (worker.joinable()) {
+        worker.join();
+    }
 }
 
 string DungeonInstance::getInstanceStats() {
@@ -73,10 +87,18 @@ uint32_t DungeonInstance::getInstanceId() const {
     return instanceId;
 }
 
-bool DungeonInstance::isBusy() const {
-    return busy;
+bool DungeonInstance::isBusy() {
+    return busy.load();
 }
 
 string DungeonInstance::getCurrentStatus() {
-    return "Dungeon " + to_string(instanceId) + " is " + (isBusy() ? "ACTIVE" : "EMPTY") + ".";
+    return "Dungeon " + to_string(instanceId) + " is " + (busy.load() ? "ACTIVE" : "EMPTY") + ".";
+}
+
+uint32_t DungeonInstance::getTotalTimeServiced() {
+    return totalTimeServiced;
+}
+
+uint32_t DungeonInstance::getTotalPartiesServed() {
+    return partiesServed;
 }

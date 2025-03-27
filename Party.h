@@ -8,4 +8,4 @@ struct Party {
     Party(uint32_t id) : partyId(id) {}
 };
 
-#endif // PARTY_H
+#endif
