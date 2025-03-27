@@ -22,8 +22,6 @@ public:
     void run();
     
     private:
-    std::mutex queueMutex;
-    std::condition_variable queueCv;
     std::queue<std::unique_ptr<Party>> partyQueue;
     std::vector<std::unique_ptr<DungeonInstance>> dungeonInstances;
     std::thread loggerThread;

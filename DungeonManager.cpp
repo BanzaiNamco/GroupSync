@@ -28,11 +28,8 @@ DungeonManager::DungeonManager(uint32_t numInstances, uint32_t t1, uint32_t t2) 
 void DungeonManager::run() {
     while (!partyQueue.empty()) {
         unique_ptr<Party> party;
-        {
-            lock_guard<mutex> lock(queueMutex);
-            party = std::move(partyQueue.front());
-            partyQueue.pop();
-        }
+        party = move(partyQueue.front());
+        partyQueue.pop();
 
         bool assigned = false;
         uint32_t instances = static_cast<uint32_t>(dungeonInstances.size());
@@ -41,7 +38,7 @@ void DungeonManager::run() {
             for (uint32_t i = 0; i < instances; ++i) {
                 uint32_t index = (lastUsedIndex + i) % instances;
                 if (!dungeonInstances[index]->isBusy()) {
-                    dungeonInstances[index]->assignParty(std::move(party)); // Transfer ownership
+                    dungeonInstances[index]->assignParty(std::move(party));
                     assigned = true;
                     lastUsedIndex = index + 1;
                     break;
@@ -67,26 +64,19 @@ DungeonManager::~DungeonManager() {
 }
 
 void DungeonManager::enqueueParty(Party party) {
-    {
-        lock_guard<mutex> lock(queueMutex);
-        partyQueue.push(std::make_unique<Party>(party));
-    }
-    queueCv.notify_one();
+    partyQueue.push(std::make_unique<Party>(party));
 }
 
 void DungeonManager::waitForCompletion() {
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(1000));
 
-        {
-            unique_lock<mutex> lock(queueMutex);
-            bool allInstancesIdle = all_of(dungeonInstances.begin(), dungeonInstances.end(), [](const auto& instance) {
-                return !instance->isBusy();
-            });
+        bool allInstancesIdle = all_of(dungeonInstances.begin(), dungeonInstances.end(), [](const auto& instance) {
+            return !instance->isBusy();
+        });
 
-            if (partyQueue.empty() && allInstancesIdle) {
-                break;
-            }
+        if (partyQueue.empty() && allInstancesIdle) {
+            break;
         }
     }
 

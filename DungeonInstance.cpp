@@ -4,6 +4,8 @@
 #include <random>
 #include <chrono>
 #include <thread>
+#include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -44,16 +46,16 @@ void DungeonInstance::processParty(const Party& party) {
     {
         lock_guard<mutex> lock(loggerMutex);
         cout << "Dungeon " << instanceId << " is now ACTIVE serving Party " << party.partyId << " for " << completionTime / 1000.00 << "s." << endl;
-        loggerCv.notify_all();
     }
+    loggerCv.notify_all();
 
     this_thread::sleep_for(chrono::milliseconds(completionTime));
 
     {
         lock_guard<mutex> lock(loggerMutex);
         cout << "Dungeon " << instanceId << " is now EMPTY after completing Party " << party.partyId << "." << endl;
-        loggerCv.notify_all();
     }
+    loggerCv.notify_all();
     partiesServed++;
     totalTimeServiced += completionTime;
 }
@@ -68,10 +70,7 @@ void DungeonInstance::assignParty(unique_ptr<Party> party) {
 }
 
 void DungeonInstance::stopInstance() {
-    {
-        lock_guard<mutex> lock(mtx);
-        stop = true;
-    }
+    stop = true;
     cv.notify_all();
     if (worker.joinable()) {
         worker.join();
@@ -79,8 +78,10 @@ void DungeonInstance::stopInstance() {
 }
 
 string DungeonInstance::getInstanceStats() {
+    stringstream stream;
+    stream << fixed << setprecision(3) << (totalTimeServiced / 1000.00);
     return "Dungeon " + to_string(instanceId) + " served " + to_string(partiesServed) + 
-           " parties with a total service time of " + to_string(totalTimeServiced / 1000.00) + "s.";
+           " parties with a total service time of " + stream.str() + "s.";
 }
 
 uint32_t DungeonInstance::getInstanceId() const {
