@@ -93,7 +93,7 @@ int main() {
     DungeonManager manager(n, t1, t2);
 
     uint32_t partiesToServe = min({t, h, d / 3});
-    cout << "Parties to serve: " << partiesToServe << endl;
+    cout << "Parties to serve: " << partiesToServe << "\n" << endl;
 
     uint32_t dpsOverflow = d - (partiesToServe * 3);
     uint32_t healerOverflow = h - partiesToServe;
