@@ -26,7 +26,17 @@ uint32_t parseInt(const string &s, const string &key) {
         if(msDigitCount == 3 && isTime) break;
     }
     
-    unsigned long value = digits.empty() ? 0 : stoul(digits) * static_cast<unsigned long>(pow(10, 3 - msDigitCount));
+    unsigned long value;
+    try {
+        value = digits.empty() ? 0 : stoul(digits) * static_cast<unsigned long>(pow(10, 3 - msDigitCount));
+    } catch (const invalid_argument& e) {
+        throw invalid_argument("Invalid number format in key: " + key);
+    } catch (const out_of_range& e) {
+        throw out_of_range("Number out of range in key: " + key);
+    }
+    if (key.find("seconds") != string::npos && value > 4294967295) {
+        throw out_of_range("Value exceeds uint32_t limits for ms");
+    }
     if (value > UINT32_MAX) {
         throw out_of_range("Value exceeds uint32_t limits");
     }
