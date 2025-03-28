@@ -1,0 +1,52 @@
+Test case 1 - Starvation test
+Expected - Instances all have similar or exactly the same amount of parties
+served and finish time
+
+max_number_of_instances=10
+number_of_tanks=100
+number_of_healers=100
+number_of_dps=300
+min_finish_time_seconds=1
+max_finish_time_seconds=1
+
+Test case 2 - Invalid t1,t2 (t1 > t2 || t1 == 0 || t2 == 0)
+Expected - Exception thrown
+
+max_number_of_instances=10
+number_of_tanks=100
+number_of_healers=100
+number_of_dps=300
+min_finish_time_seconds=3
+max_finish_time_seconds=1
+
+Test case 3 - Number parser check
+Expected - All non number values are ignored and the rest are parsed correctly
+Expected(1) - negative numbers are turned positive
+Expected(2) - float values for non time values are truncated; time values are truncated after 3 decimals.
+
+max_number_of_instances=1abc2
+number_of_tanks=hsdf1
+number_of_healers=,1
+number_of_dps=-3
+min_finish_time_seconds=1
+max_finish_time_seconds=1.1234
+
+Test case 4 - Simulation run
+Expected - All instances have similar finish times and parties served
+
+max_number_of_instances=20
+number_of_tanks=234
+number_of_healers=189
+number_of_dps=18786
+min_finish_time_seconds=1
+max_finish_time_seconds=15
+
+Test case 5 - Two instances, one party
+Expected - One instance serves the party and the other instance is idle
+
+max_number_of_instances=2
+number_of_tanks=4
+number_of_healers=1
+number_of_dps=3
+min_finish_time_seconds=1
+max_finish_time_seconds=2
